@@ -44,7 +44,7 @@ with st.sidebar:
 
     st.divider()
     st.subheader("🤖 Génération de script")
-    script_engine = st.radio("Moteur", ["Ollama (local, recommandé)", "Template intégré"])
+    script_engine = st.radio("Moteur", ["Template intégré", "Ollama (local uniquement)"])
 
 # ── Layout principal ───────────────────────────────────────────────────────────
 col1, col2 = st.columns([1, 1], gap="large")
@@ -62,6 +62,7 @@ with col1:
                 st.session_state["script"] = generate_script_ollama(topic, duration, language)
             else:
                 st.session_state["script"] = generate_script_template(topic, duration, language)
+            # note: Ollama requires a local install and won't work on Streamlit Cloud
         st.success("Script généré !")
 
     script_text = st.text_area(
