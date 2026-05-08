@@ -4,7 +4,12 @@ import tempfile
 import streamlit as st
 
 from modules.footage import fetch_pexels, save_uploads
-from modules.script_gen import generate_script_ollama, generate_script_template
+from modules.script_gen import (
+    generate_script_groq,
+    generate_script_ollama,
+    generate_script_openai,
+    generate_script_template,
+)
 from modules.tts import VOICES, generate_voice
 from modules.video_builder import assemble_video
 
@@ -44,7 +49,32 @@ with st.sidebar:
 
     st.divider()
     st.subheader("🤖 Génération de script")
-    script_engine = st.radio("Moteur", ["Template intégré", "Ollama (local uniquement)"])
+    script_engine = st.radio(
+        "Moteur IA",
+        [
+            "Groq — Gratuit & rapide (recommandé)",
+            "OpenAI GPT-4o-mini",
+            "Template intégré (sans clé)",
+            "Ollama (local uniquement)",
+        ],
+    )
+
+    groq_key = ""
+    openai_key = ""
+    if script_engine.startswith("Groq"):
+        groq_key = st.text_input(
+            "Clé API Groq",
+            type="password",
+            placeholder="console.groq.com → Free API key",
+        )
+        st.caption("Gratuit · 14 400 req/jour · Inscription en 1 min")
+    elif script_engine.startswith("OpenAI"):
+        openai_key = st.text_input(
+            "Clé API OpenAI",
+            type="password",
+            placeholder="platform.openai.com/api-keys",
+        )
+        st.caption("Payant · ~0.0001 $/script · Très haute qualité")
 
 # ── Layout principal ───────────────────────────────────────────────────────────
 col1, col2 = st.columns([1, 1], gap="large")
@@ -56,13 +86,28 @@ with col1:
         placeholder="Ex : Les habitudes des millionnaires, Comment perdre du poids…",
     )
 
-    if st.button("✍️ Générer le script", disabled=not topic):
+    engine_ready = (
+        (script_engine.startswith("Groq") and groq_key)
+        or (script_engine.startswith("OpenAI") and openai_key)
+        or script_engine.startswith("Template")
+        or script_engine.startswith("Ollama")
+    )
+
+    if script_engine.startswith("Groq") and not groq_key:
+        st.warning("Entrez votre clé Groq dans la barre latérale.")
+    if script_engine.startswith("OpenAI") and not openai_key:
+        st.warning("Entrez votre clé OpenAI dans la barre latérale.")
+
+    if st.button("✍️ Générer le script", disabled=not (topic and engine_ready)):
         with st.spinner("Génération en cours…"):
-            if script_engine.startswith("Ollama"):
+            if script_engine.startswith("Groq"):
+                st.session_state["script"] = generate_script_groq(topic, duration, language, groq_key)
+            elif script_engine.startswith("OpenAI"):
+                st.session_state["script"] = generate_script_openai(topic, duration, language, openai_key)
+            elif script_engine.startswith("Ollama"):
                 st.session_state["script"] = generate_script_ollama(topic, duration, language)
             else:
                 st.session_state["script"] = generate_script_template(topic, duration, language)
-            # note: Ollama requires a local install and won't work on Streamlit Cloud
         st.success("Script généré !")
 
     script_text = st.text_area(

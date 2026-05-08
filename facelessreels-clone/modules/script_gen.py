@@ -1,20 +1,46 @@
 import requests
+from openai import OpenAI
 
 
-def generate_script_ollama(topic: str, duration: int, language: str) -> str:
+def _build_prompt(topic: str, duration: int, language: str) -> str:
     lang = "en français" if language == "fr" else "in English"
     word_count = int(duration * 2.2)
-    prompt = (
+    return (
         f"Write a {word_count}-word faceless video script {lang} about: {topic}. "
         f"Start with a strong hook in the first 10 words. "
-        f"Be engaging, informative, use short sentences. "
+        f"Be engaging, informative, use short punchy sentences. "
         f"End with a call-to-action (like/subscribe/follow). "
         f"Output ONLY the script text, no title, no instructions, no metadata."
     )
+
+
+def generate_script_groq(topic: str, duration: int, language: str, api_key: str) -> str:
+    client = OpenAI(api_key=api_key, base_url="https://api.groq.com/openai/v1")
+    response = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=[{"role": "user", "content": _build_prompt(topic, duration, language)}],
+        temperature=0.8,
+        max_tokens=2000,
+    )
+    return response.choices[0].message.content.strip()
+
+
+def generate_script_openai(topic: str, duration: int, language: str, api_key: str) -> str:
+    client = OpenAI(api_key=api_key)
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": _build_prompt(topic, duration, language)}],
+        temperature=0.8,
+        max_tokens=2000,
+    )
+    return response.choices[0].message.content.strip()
+
+
+def generate_script_ollama(topic: str, duration: int, language: str) -> str:
     try:
         r = requests.post(
             "http://localhost:11434/api/generate",
-            json={"model": "llama3.2", "prompt": prompt, "stream": False},
+            json={"model": "llama3.2", "prompt": _build_prompt(topic, duration, language), "stream": False},
             timeout=90,
         )
         r.raise_for_status()
