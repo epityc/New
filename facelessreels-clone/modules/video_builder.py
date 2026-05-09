@@ -1,10 +1,10 @@
 import datetime
 import pathlib
 import subprocess
+import tempfile
 import uuid
 
 import srt
-from moviepy.editor import AudioFileClip, VideoFileClip, concatenate_videoclips
 
 OUTPUT_DIR = pathlib.Path("output")
 OUTPUT_DIR.mkdir(exist_ok=True)
@@ -16,10 +16,18 @@ FORMATS = {
 
 
 def get_audio_duration(audio_path: str) -> float:
-    clip = AudioFileClip(audio_path)
-    duration = clip.duration
-    clip.close()
-    return duration
+    result = subprocess.run(
+        [
+            "ffprobe", "-v", "error",
+            "-show_entries", "format=duration",
+            "-of", "default=noprint_wrappers=1:nokey=1",
+            audio_path,
+        ],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    return float(result.stdout.strip())
 
 
 def compute_subtitles(script: str, duration: float, words_per_seg: int) -> list[dict]:
@@ -49,14 +57,45 @@ def write_srt(segments: list[dict], path: str) -> None:
     pathlib.Path(path).write_text(srt.compose(subs), encoding="utf-8")
 
 
-def _resize_crop(clip: VideoFileClip, w: int, h: int) -> VideoFileClip:
-    target_ratio = w / h
-    source_ratio = clip.w / clip.h
-    if source_ratio > target_ratio:
-        clip = clip.resize(height=h)
-    else:
-        clip = clip.resize(width=w)
-    return clip.crop(x_center=clip.w / 2, y_center=clip.h / 2, width=w, height=h)
+def _resize_crop_clip(input_path: str, output_path: str, w: int, h: int, duration: float) -> None:
+    vf = (
+        f"scale={w}:{h}:force_original_aspect_ratio=increase,"
+        f"crop={w}:{h},"
+        f"setsar=1"
+    )
+    subprocess.run(
+        [
+            "ffmpeg", "-y",
+            "-i", input_path,
+            "-t", str(duration),
+            "-vf", vf,
+            "-r", "24",
+            "-c:v", "libx264", "-preset", "fast", "-crf", "23",
+            "-an",
+            output_path,
+        ],
+        capture_output=True,
+        check=True,
+    )
+
+
+def _concat_clips(clip_paths: list[str], output_path: str) -> None:
+    list_file = tempfile.mktemp(suffix=".txt")
+    with open(list_file, "w") as f:
+        for p in clip_paths:
+            f.write(f"file '{p}'\n")
+    subprocess.run(
+        [
+            "ffmpeg", "-y",
+            "-f", "concat", "-safe", "0",
+            "-i", list_file,
+            "-c", "copy",
+            output_path,
+        ],
+        capture_output=True,
+        check=True,
+    )
+    pathlib.Path(list_file).unlink(missing_ok=True)
 
 
 def assemble_video(
@@ -67,27 +106,51 @@ def assemble_video(
     script: str,
 ) -> str:
     w, h = FORMATS[format_type]
-    audio = AudioFileClip(audio_path)
-    total_duration = audio.duration
-
-    clips = [_resize_crop(VideoFileClip(p).without_audio(), w, h) for p in footage_paths]
-
-    base = concatenate_videoclips(clips, method="compose")
-    if base.duration < total_duration:
-        repeats = int(total_duration / base.duration) + 2
-        base = concatenate_videoclips([base] * repeats, method="compose")
-    base = base.subclip(0, total_duration).set_audio(audio)
-
     uid = uuid.uuid4().hex[:8]
-    tmp_video = str(OUTPUT_DIR / f"_tmp_{uid}.mp4")
-    base.write_videofile(tmp_video, fps=24, codec="libx264", audio_codec="aac", logger=None)
-    base.close()
-    audio.close()
-    for c in clips:
-        c.close()
+    tmp_dir = pathlib.Path(tempfile.gettempdir()) / f"fr_{uid}"
+    tmp_dir.mkdir(exist_ok=True)
 
+    total_duration = get_audio_duration(audio_path)
+
+    # Resize & crop each clip to target resolution
+    processed: list[str] = []
+    for i, path in enumerate(footage_paths):
+        out = str(tmp_dir / f"clip_{i}.mp4")
+        clip_dur = get_audio_duration(path)
+        _resize_crop_clip(path, out, w, h, min(clip_dur, total_duration))
+        processed.append(out)
+
+    # Concatenate clips
+    concat_once = str(tmp_dir / "concat_once.mp4")
+    _concat_clips(processed, concat_once)
+
+    # Loop until we cover the full audio duration
+    concat_dur = get_audio_duration(concat_once)
+    if concat_dur < total_duration:
+        repeats = int(total_duration / concat_dur) + 2
+        looped = str(tmp_dir / "looped.mp4")
+        _concat_clips([concat_once] * repeats, looped)
+        concat_once = looped
+
+    # Trim to exact audio duration and mix audio
+    video_with_audio = str(OUTPUT_DIR / f"_raw_{uid}.mp4")
+    subprocess.run(
+        [
+            "ffmpeg", "-y",
+            "-i", concat_once,
+            "-i", audio_path,
+            "-t", str(total_duration),
+            "-map", "0:v:0", "-map", "1:a:0",
+            "-c:v", "copy", "-c:a", "aac", "-shortest",
+            video_with_audio,
+        ],
+        capture_output=True,
+        check=True,
+    )
+
+    # Generate and burn subtitles
     subs = compute_subtitles(script, total_duration, words_per_seg)
-    srt_path = str(OUTPUT_DIR / f"_subs_{uid}.srt")
+    srt_path = str(tmp_dir / "subs.srt")
     write_srt(subs, srt_path)
 
     final_path = str(OUTPUT_DIR / f"reel_{uid}.mp4")
@@ -98,21 +161,24 @@ def assemble_video(
         f"PrimaryColour=&Hffffff,OutlineColour=&H000000,Outline=2,"
         f"Alignment=2,MarginV={margin_v}"
     )
-    # escape colon in path for ffmpeg filter on Linux
     srt_escaped = srt_path.replace("\\", "/").replace(":", "\\:")
     result = subprocess.run(
         [
-            "ffmpeg", "-y", "-i", tmp_video,
+            "ffmpeg", "-y",
+            "-i", video_with_audio,
             "-vf", f"subtitles={srt_escaped}:force_style='{style}'",
-            "-c:a", "copy", final_path,
+            "-c:a", "copy",
+            final_path,
         ],
         capture_output=True,
     )
     if result.returncode != 0:
-        # fallback: return video without subtitles if libass missing
-        pathlib.Path(tmp_video).rename(final_path)
+        pathlib.Path(video_with_audio).rename(final_path)
     else:
-        pathlib.Path(tmp_video).unlink(missing_ok=True)
+        pathlib.Path(video_with_audio).unlink(missing_ok=True)
 
-    pathlib.Path(srt_path).unlink(missing_ok=True)
+    for f in tmp_dir.iterdir():
+        f.unlink(missing_ok=True)
+    tmp_dir.rmdir()
+
     return final_path
