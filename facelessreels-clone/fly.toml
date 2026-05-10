@@ -1,0 +1,29 @@
+app = "facelessreels-clone"
+primary_region = "cdg"  # Paris
+
+[build]
+  [build.args]
+    PYTHON_VERSION = "3.11"
+
+[env]
+  PORT = "8501"
+
+[[services]]
+  internal_port = 8501
+  protocol = "tcp"
+
+  [[services.ports]]
+    handlers = ["http"]
+    port = 80
+
+  [[services.ports]]
+    handlers = ["tls", "http"]
+    port = 443
+
+  [services.concurrency]
+    hard_limit = 5
+    soft_limit = 3
+
+[mounts]
+  source = "facelessreels_data"
+  destination = "/app/output"
