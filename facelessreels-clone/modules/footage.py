@@ -2,8 +2,56 @@ import pathlib
 import tempfile
 import requests
 
+ART_STYLES: dict[str, dict] = {
+    "Cinematic": {
+        "icon": "🎬",
+        "description": "Epic cinematic shots, wide angles",
+        "pexels_query": "cinematic landscape epic aerial drone",
+    },
+    "Dark & Moody": {
+        "icon": "🌑",
+        "description": "Dark, atmospheric and mysterious",
+        "pexels_query": "dark moody atmospheric fog night shadow",
+    },
+    "Nature": {
+        "icon": "🌿",
+        "description": "Beautiful nature and landscapes",
+        "pexels_query": "nature forest waterfall mountains landscape",
+    },
+    "Urban": {
+        "icon": "🏙️",
+        "description": "City life and urban environments",
+        "pexels_query": "city urban street timelapse downtown",
+    },
+    "Abstract": {
+        "icon": "🎨",
+        "description": "Abstract and artistic visuals",
+        "pexels_query": "abstract art particles colorful motion",
+    },
+    "Vintage": {
+        "icon": "📽️",
+        "description": "Old film and vintage aesthetic",
+        "pexels_query": "vintage retro old film historical",
+    },
+    "Space": {
+        "icon": "🚀",
+        "description": "Space, cosmos and universe",
+        "pexels_query": "space galaxy stars universe cosmos",
+    },
+    "Ocean": {
+        "icon": "🌊",
+        "description": "Ocean, waves and underwater",
+        "pexels_query": "ocean waves underwater sea beach",
+    },
+}
 
-def fetch_pexels(query: str, count: int, api_key: str, orientation: str = "portrait") -> list[str]:
+
+def fetch_pexels(
+    query: str,
+    count: int,
+    api_key: str,
+    orientation: str = "portrait",
+) -> list[str]:
     headers = {"Authorization": api_key}
     r = requests.get(
         "https://api.pexels.com/videos/search",
@@ -18,13 +66,12 @@ def fetch_pexels(query: str, count: int, api_key: str, orientation: str = "portr
 
     paths = []
     for i, vid in enumerate(videos[:count]):
-        # prefer HD quality
         files = sorted(vid["video_files"], key=lambda f: f.get("width", 0), reverse=True)
         url = files[0]["link"]
-        tmp = pathlib.Path(tempfile.gettempdir()) / f"pexels_{query[:10]}_{i}.mp4"
+        safe_query = query[:15].replace(" ", "_")
+        tmp = pathlib.Path(tempfile.gettempdir()) / f"pexels_{safe_query}_{i}.mp4"
         if not tmp.exists():
-            content = requests.get(url, timeout=60).content
-            tmp.write_bytes(content)
+            tmp.write_bytes(requests.get(url, timeout=60).content)
         paths.append(str(tmp))
 
     return paths
