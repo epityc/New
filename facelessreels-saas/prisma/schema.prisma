@@ -1,0 +1,97 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// User — synchronisé avec Clerk via webhook
+// ─────────────────────────────────────────────────────────────────────────────
+model User {
+  id               String        @id @default(cuid())
+  clerkId          String        @unique
+  email            String        @unique
+  creditsBalance   Int           @default(3)        // 3 crédits offerts à l'inscription
+  stripeCustomerId String?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  videos           Video[]
+  transactions     Transaction[]
+
+  @@map("users")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Video — un projet de génération vidéo
+// ─────────────────────────────────────────────────────────────────────────────
+model Video {
+  id              String      @id @default(cuid())
+  userId          String
+  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Paramètres choisis par l'utilisateur
+  topic           String
+  niche           String?
+  language        String      @default("en")
+  voiceId         String?                       // ElevenLabs voice ID
+  captionStyle    String      @default("bold_stroke")
+  artStyle        String      @default("cinematic")
+  hasFilmGrain    Boolean     @default(false)
+  hasGlitch       Boolean     @default(false)
+  durationTarget  Int         @default(60)      // secondes
+
+  // Assets générés
+  script          String?     @db.Text
+  audioUrl        String?                       // URL S3/Supabase Storage
+  wordTimestamps  Json?                         // timestamps ElevenLabs mot par mot
+  backgroundUrls  String[]                     // URLs vidéos Pexels
+
+  // Résultat
+  status          VideoStatus @default(PENDING)
+  finalVideoUrl   String?
+  errorMessage    String?
+
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@map("videos")
+}
+
+enum VideoStatus {
+  PENDING
+  SCRIPTING
+  GENERATING_AUDIO
+  FETCHING_FOOTAGE
+  RENDERING
+  COMPLETED
+  FAILED
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Transaction — historique des crédits (achats + consommation)
+// ─────────────────────────────────────────────────────────────────────────────
+model Transaction {
+  id                    String   @id @default(cuid())
+  userId                String
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type                  TransactionType
+  credits               Int                       // positif = achat, négatif = usage
+  description           String?
+  stripePaymentIntentId String?
+
+  createdAt             DateTime @default(now())
+
+  @@map("transactions")
+}
+
+enum TransactionType {
+  PURCHASE   // achat de crédits via Stripe
+  USAGE      // consommation d'1 crédit pour générer une vidéo
+  REFUND     // remboursement si la génération échoue
+  BONUS      // crédits offerts (inscription, parrainage...)
+}
