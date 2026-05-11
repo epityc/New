@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { Download, ArrowLeft, Loader2, CheckCircle, XCircle, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { VideoStatusPoller } from "@/components/dashboard/VideoStatusPoller";
 
 const STATUS_STEPS = [
   { key: "SCRIPTING",        label: "Writing script" },
@@ -40,6 +41,9 @@ export default async function VideoPage({ params }: { params: { id: string } }) 
       <Link href="/dashboard/videos" className="flex items-center gap-2 text-sm text-white/40 hover:text-white mb-6 transition-colors w-fit">
         <ArrowLeft size={14} /> Back to videos
       </Link>
+
+      {/* Auto-refresh while processing */}
+      <VideoStatusPoller videoId={video.id} currentStatus={video.status} />
 
       <h1 className="text-2xl font-bold mb-1 truncate">{video.topic || "Untitled"}</h1>
       <p className="text-white/40 text-sm mb-8">
