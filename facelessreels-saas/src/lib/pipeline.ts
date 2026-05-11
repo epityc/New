@@ -3,6 +3,8 @@ import { generateScript } from "./openai";
 import { generateAudio } from "./elevenlabs";
 import { fetchPexelsFootage } from "./pexels";
 import { uploadAudio } from "./storage";
+import { renderVideo } from "./render";
+import type { WordTimestamp } from "../remotion/types";
 
 export async function runGenerationPipeline(videoId: string): Promise<void> {
   try {
@@ -42,11 +44,22 @@ export async function runGenerationPipeline(videoId: string): Promise<void> {
       data: { backgroundUrls, status: "RENDERING" },
     });
 
-    // ── 4. Rendering ───────────────────────────────────────────────────────
-    // Remotion rendering is handled in Step 4.
-    // For now, mark as COMPLETED so the UI can show the assets are ready.
-    // TODO: replace with actual Remotion render call
-    await prisma.video.update({ where: { id: videoId }, data: { status: "COMPLETED" } });
+    // ── 4. Rendering ──────────────────────────────────────────────────────
+    // Re-fetch so we have the latest audioUrl + wordTimestamps persisted above
+    const freshVideo = await prisma.video.findUniqueOrThrow({ where: { id: videoId } });
+
+    const finalVideoUrl = await renderVideo(videoId, {
+      audioUrl: freshVideo.audioUrl!,
+      backgroundUrls: freshVideo.backgroundUrls,
+      wordTimestamps: (freshVideo.wordTimestamps ?? []) as WordTimestamp[],
+      captionStyle: freshVideo.captionStyle,
+      durationTarget: freshVideo.durationTarget,
+    });
+
+    await prisma.video.update({
+      where: { id: videoId },
+      data: { status: "COMPLETED", finalVideoUrl },
+    });
 
   } catch (err: any) {
     await prisma.video.update({

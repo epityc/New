@@ -35,7 +35,10 @@ npm install openai zod
 npm install stripe @stripe/stripe-js
 
 # Vidéo
-npm install remotion @remotion/bundler @remotion/cli @remotion/renderer
+npm install remotion @remotion/bundler @remotion/cli @remotion/renderer @remotion/google-fonts
+
+# Webhook validation
+npm install svix
 ```
 
 ## Étape 3 — Configurer l'environnement
@@ -75,3 +78,18 @@ npx prisma generate
 npm run dev
 # → http://localhost:3000
 ```
+
+## Prévisualiser la composition Remotion
+
+```bash
+npx remotion studio src/remotion/Root.tsx
+# → http://localhost:3001
+```
+
+## Notes sur le rendu vidéo
+
+- Le rendu Remotion utilise Chromium headless — il faut ~2 Go de RAM minimum.
+- Sur Vercel (serverless), les fonctions timeout à 60s → utilisez **Vercel Functions Pro** (max 15min) ou déployez sur **Railway / Render** (Node.js persistent).
+- Pour Vercel, remplacez `renderMedia()` par **@remotion/lambda** (rendu AWS Lambda).
+- Le bucket Supabase Storage `videos` doit être créé en **public** pour que les URLs fonctionnent.
+
