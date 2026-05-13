@@ -10,20 +10,20 @@ const features = [
 const plans = [
   {
     name: "Starter",
-    price: "49",
+    price: "3 000",
     credits: "50 crédits / mois",
     features: ["Vidéos Sora 2 & Veo 3.1", "Images Nano Banana", "Historique 30 jours", "Support email"],
   },
   {
     name: "Pro",
-    price: "149",
+    price: "6 000",
     credits: "200 crédits / mois",
     features: ["Tout Starter", "Kling 3.0 inclus", "Influenceurs personnalisés", "Historique illimité", "Support prioritaire"],
     highlighted: true,
   },
   {
     name: "Agency",
-    price: "399",
+    price: "9 000",
     credits: "Crédits illimités",
     features: ["Tout Pro", "Multi-comptes", "API access", "Onboarding dédié", "Account manager"],
   },
@@ -96,7 +96,7 @@ export default function HomePage() {
                 <p className={`text-sm mb-4 ${plan.highlighted ? "text-brand-100" : "text-gray-500"}`}>{plan.credits}</p>
                 <div className="mb-6">
                   <span className="text-4xl font-bold">${plan.price}</span>
-                  <span className={`text-sm ${plan.highlighted ? "text-brand-100" : "text-gray-500"}`}>/mois</span>
+                  <span className={`text-sm ${plan.highlighted ? "text-brand-100" : "text-gray-500"}`}> XOF/mois</span>
                 </div>
                 <ul className="space-y-2 mb-8">
                   {plan.features.map((f) => (

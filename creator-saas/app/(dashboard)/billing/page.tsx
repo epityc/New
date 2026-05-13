@@ -3,9 +3,9 @@ import { stripe } from "@/lib/stripe";
 import { Check } from "lucide-react";
 
 const plans = [
-  { name: "Starter", price: "$49/mois", credits: 50, priceId: process.env.STRIPE_PRICE_STARTER_ID },
-  { name: "Pro", price: "$149/mois", credits: 200, priceId: process.env.STRIPE_PRICE_PRO_ID, highlighted: true },
-  { name: "Agency", price: "$399/mois", credits: 9999, priceId: process.env.STRIPE_PRICE_AGENCY_ID },
+  { name: "Starter", price: "3 000 XOF/mois", credits: 50, priceId: process.env.STRIPE_PRICE_STARTER_ID },
+  { name: "Pro", price: "6 000 XOF/mois", credits: 200, priceId: process.env.STRIPE_PRICE_PRO_ID, highlighted: true },
+  { name: "Agency", price: "9 000 XOF/mois", credits: 9999, priceId: process.env.STRIPE_PRICE_AGENCY_ID },
 ];
 
 async function createCheckoutAction(priceId: string, userId: string) {
