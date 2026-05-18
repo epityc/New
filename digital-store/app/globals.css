@@ -1,0 +1,108 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&display=swap');
+
+:root {
+  --font-inter: 'Inter', sans-serif;
+  --font-playfair: 'Playfair Display', serif;
+}
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-inter);
+  background-color: #ffffff;
+  color: #1a1a2e;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #fff0f7; }
+::-webkit-scrollbar-thumb { background: #c084fc; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #a855f7; }
+
+/* Selection */
+::selection { background: #ffd6ea; color: #6d28d9; }
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center gap-2 px-6 py-3 rounded-full font-semibold text-white
+    bg-gradient-to-r from-blush-400 to-violet-500
+    hover:from-blush-500 hover:to-violet-600
+    shadow-soft hover:shadow-glow
+    transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center gap-2 px-6 py-3 rounded-full font-semibold
+    text-violet-600 bg-white border-2 border-violet-200
+    hover:bg-violet-50 hover:border-violet-400
+    transition-all duration-300 hover:-translate-y-0.5;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center gap-2 px-4 py-2 rounded-full font-medium
+    text-blush-500 hover:bg-blush-50
+    transition-all duration-200;
+  }
+
+  .card {
+    @apply bg-white rounded-2xl shadow-card border border-blush-100
+    hover:shadow-glow hover:-translate-y-1
+    transition-all duration-300;
+  }
+
+  .badge {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold;
+  }
+
+  .badge-pink {
+    @apply badge bg-blush-100 text-blush-600;
+  }
+
+  .badge-purple {
+    @apply badge bg-violet-100 text-violet-600;
+  }
+
+  .section-title {
+    @apply font-display text-3xl md:text-4xl lg:text-5xl font-bold leading-tight;
+  }
+
+  .gradient-text {
+    @apply bg-gradient-to-r from-blush-400 to-violet-500 bg-clip-text text-transparent;
+  }
+
+  .input {
+    @apply w-full px-4 py-3 rounded-xl border border-blush-200 bg-white
+    text-gray-700 placeholder-gray-400
+    focus:outline-none focus:ring-2 focus:ring-violet-300 focus:border-transparent
+    transition-all duration-200;
+  }
+}
+
+/* Product card hover effect */
+.product-card-img {
+  transition: transform 0.4s ease;
+}
+.product-card:hover .product-card-img {
+  transform: scale(1.05);
+}
+
+/* Gradient orbs decoration */
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.3;
+  pointer-events: none;
+}
