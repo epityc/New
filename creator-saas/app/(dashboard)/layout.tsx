@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { LayoutDashboard, Video, CreditCard, LogOut, Zap } from "lucide-react";
+import { LayoutDashboard, Video, CreditCard, LogOut, Zap, Rocket, Share2 } from "lucide-react";
 
 const navItems = [
   { href: "/dashboard", label: "Accueil", icon: LayoutDashboard },
   { href: "/generate", label: "Générer", icon: Zap },
+  { href: "/pipeline", label: "Pipeline complet", icon: Rocket },
   { href: "/videos", label: "Mes vidéos", icon: Video },
+  { href: "/social", label: "Réseaux sociaux", icon: Share2 },
   { href: "/billing", label: "Abonnement", icon: CreditCard },
 ];
 

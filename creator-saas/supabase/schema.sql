@@ -50,3 +50,25 @@ create policy "Users can read own generations"
 
 create policy "Users can insert own generations"
   on public.generations for insert with check (auth.uid() = user_id);
+
+-- Publications (DanSUGC posting)
+create table public.publications (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references public.profiles(id) on delete cascade not null,
+  video_url text not null,
+  caption text not null,
+  account_ids text[] not null default '{}',
+  scheduled_for timestamptz,
+  publish_now boolean default false,
+  dansugc_post_id text,
+  status text not null default 'scheduled' check (status in ('scheduled', 'published', 'failed')),
+  created_at timestamptz default now()
+);
+
+alter table public.publications enable row level security;
+
+create policy "Users can read own publications"
+  on public.publications for select using (auth.uid() = user_id);
+
+create policy "Users can insert own publications"
+  on public.publications for insert with check (auth.uid() = user_id);
