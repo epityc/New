@@ -1,0 +1,27 @@
+{
+  "name": "remotion-videos",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "studio": "remotion studio",
+    "render:explainer": "remotion render ExplainerVideo out/explainer.mp4",
+    "render:reel": "remotion render SocialReel out/reel.mp4",
+    "render:product": "remotion render ProductShowcase out/product.mp4",
+    "render:all": "npm run render:explainer && npm run render:reel && npm run render:product"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.291",
+    "@remotion/google-fonts": "4.0.291",
+    "remotion": "4.0.291",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "typescript": "^5.4.5"
+  },
+  "remotion": {
+    "entryPoint": "src/index.ts"
+  }
+}
