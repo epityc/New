@@ -4,9 +4,9 @@ import { prisma } from "@/lib/prisma";
 import { Zap } from "lucide-react";
 
 const CREDIT_PACKS = [
-  { id: "starter",   credits: 10,  price: 9,  popular: false },
-  { id: "pro",       credits: 50,  price: 29, popular: true  },
-  { id: "unlimited", credits: 200, price: 79, popular: false },
+  { id: "starter",   name: "Starter",   credits: 10,  price: 9,  popular: false },
+  { id: "pro",       name: "Pro",       credits: 50,  price: 29, popular: true  },
+  { id: "unlimited", name: "Unlimited", credits: 200, price: 79, popular: false },
 ];
 
 export default async function BillingPage() {

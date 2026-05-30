@@ -16,14 +16,16 @@ export const RemotionRoot: React.FC = () => {
   return (
     <Composition
       id="FacelessVideo"
-      component={FacelessVideo}
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      component={FacelessVideo as any}
       durationInFrames={60 * FPS}
       fps={FPS}
       width={1080}
       height={1920}
       defaultProps={defaultProps}
       calculateMetadata={({ props }) => ({
-        durationInFrames: Math.ceil(props.durationTarget * FPS) + FPS, // +1s buffer
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        durationInFrames: Math.ceil((props as any).durationTarget * FPS) + FPS,
       })}
     />
   );

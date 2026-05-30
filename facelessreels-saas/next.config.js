@@ -4,11 +4,18 @@ const nextConfig = {
     remotePatterns: [
       { protocol: "https", hostname: "**.pexels.com" },
       { protocol: "https", hostname: "**.supabase.co" },
+      { protocol: "https", hostname: "**.amazonaws.com" },
     ],
   },
-  // Allow large response bodies for video rendering
+  // Exclude heavy Remotion server packages from the serverless bundle.
+  // The local renderer is only used for dev/desktop; Lambda handles prod rendering.
   experimental: {
-    serverActions: { bodySizeLimit: "50mb" },
+    serverComponentsExternalPackages: [
+      "@remotion/renderer",
+      "@remotion/bundler",
+      "@remotion/cli",
+      "remotion",
+    ],
   },
 };
 
