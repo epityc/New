@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { runGenerationPipeline } from "@/lib/pipeline";
 
+export const maxDuration = 300; // Vercel Pro — 5 min for steps 1-3 + Lambda start
+
 export async function POST(req: NextRequest) {
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -53,8 +55,10 @@ export async function POST(req: NextRequest) {
     }),
   ]);
 
-  // Fire-and-forget pipeline (runs in Node.js background)
-  void runGenerationPipeline(video.id);
+  // Run pipeline synchronously: steps 1-3 run here, Lambda render starts async
+  // The function returns once Lambda render is queued (status = RENDERING)
+  // Completion is handled via /api/webhooks/remotion
+  await runGenerationPipeline(video.id);
 
   return NextResponse.json({ videoId: video.id });
 }

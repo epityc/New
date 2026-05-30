@@ -1,7 +1,12 @@
 import OpenAI from "openai";
 import { NICHES } from "./constants";
 
-const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+// Lazy init so missing env var doesn't crash at build time
+let _client: OpenAI | null = null;
+function getClient() {
+  if (!_client) _client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  return _client;
+}
 
 function buildPrompt(topic: string, niche: string | null, language: string, duration: number): string {
   const nicheLabel = NICHES.find((n) => n.id === niche)?.label ?? niche ?? "general";
@@ -28,7 +33,7 @@ export async function generateScript(
   language: string,
   duration: number
 ): Promise<string> {
-  const completion = await client.chat.completions.create({
+  const completion = await getClient().chat.completions.create({
     model: "gpt-4o-mini",
     messages: [{ role: "user", content: buildPrompt(topic, niche, language, duration) }],
     temperature: 0.85,

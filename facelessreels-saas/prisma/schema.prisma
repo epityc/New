@@ -50,6 +50,10 @@ model Video {
   wordTimestamps  Json?                         // timestamps ElevenLabs mot par mot
   backgroundUrls  String[]                     // URLs vidéos Pexels
 
+  // Remotion Lambda tracking
+  remotionRenderId   String?
+  remotionBucketName String?
+
   // Résultat
   status          VideoStatus @default(PENDING)
   finalVideoUrl   String?
